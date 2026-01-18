@@ -1,4 +1,5 @@
 #include "gitz.h"
+#include "Blob.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -8,7 +9,7 @@ namespace fs = std::filesystem;
 namespace gitz
 {
     Repository::Repository(const std::string& path)
-        : repoPath(path)
+        : repoPath(path), blobStore(nullptr)
     {
     }
 
@@ -26,6 +27,9 @@ namespace gitz
             fs::create_directories(gitzDir / "objects");
             fs::create_directories(gitzDir / "refs" / "heads");
 
+            // Create BlobStore
+            blobStore = new BlobStore(repoPath + "/.gitz/objects");
+
             // Create HEAD file
             std::ofstream headFile(gitzDir / "HEAD");
             if (!headFile.is_open()) {
@@ -39,6 +43,13 @@ namespace gitz
         } catch (const fs::filesystem_error& e) {
             std::cerr << "Error: " << e.what() << std::endl;
             return false;
+        }
+    }
+
+    Repository::~Repository()
+    {
+        if (blobStore != nullptr) {
+            delete blobStore;
         }
     }
 
