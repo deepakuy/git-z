@@ -1,6 +1,7 @@
 #include "gitz.h"
 #include "Blob.h"
 #include "Tree.h"
+#include "Commit.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -10,7 +11,7 @@ namespace fs = std::filesystem;
 namespace gitz
 {
     Repository::Repository(const std::string& path)
-        : repoPath(path), blobStore(nullptr), treeStore(nullptr)
+        : repoPath(path), blobStore(nullptr), treeStore(nullptr), commitStore(nullptr)
     {
     }
 
@@ -33,6 +34,9 @@ namespace gitz
 
             // Create TreeStore
             treeStore = new TreeStore(repoPath + "/.gitz/objects");
+
+            // Create CommitStore
+            commitStore = new CommitStore(repoPath + "/.gitz/objects");
 
             // Create HEAD file
             std::ofstream headFile(gitzDir / "HEAD");
@@ -57,6 +61,9 @@ namespace gitz
         }
         if (treeStore != nullptr) {
             delete treeStore;
+        }
+        if (commitStore != nullptr) {
+            delete commitStore;
         }
     }
 

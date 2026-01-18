@@ -7,6 +7,7 @@ namespace gitz
     // Forward declarations
     class BlobStore;
     class TreeStore;
+    class CommitStore;
 
     class Repository
     {
@@ -14,6 +15,7 @@ namespace gitz
         std::string repoPath;
         BlobStore* blobStore;
         TreeStore* treeStore;
+        CommitStore* commitStore;
 
     public:
         explicit Repository(const std::string& path);
