@@ -15,7 +15,8 @@ namespace gitz
 {
     Repository::Repository(const std::string& path)
         : repoPath(path), blobStore(nullptr), treeStore(nullptr), commitStore(nullptr), 
-          index(nullptr), branchManager(nullptr), headCommitHash("")
+          index(nullptr), branchManager(nullptr), headCommitHash(""),
+          blob_cache(nullptr), commit_cache(nullptr), history_cache(nullptr)
     {
     }
 
@@ -48,6 +49,11 @@ namespace gitz
             // Create BranchManager
             branchManager = new BranchManager(this);
 
+            // Initialize caches
+            blob_cache = std::make_unique<BlobCache>(100);
+            commit_cache = std::make_unique<CommitCache>(50);
+            history_cache = std::make_unique<HistoryCache>();
+
             // Create HEAD file
             std::ofstream headFile(gitzDir / "HEAD");
             if (!headFile.is_open()) {
@@ -75,7 +81,13 @@ namespace gitz
     bool Repository::open()
     {
         // If already opened, return success
-        if (blobStore || treeStore || commitStore || index) {
+        if (blobStore && treeStore && commitStore && index) {
+            if (!blob_cache)
+                blob_cache = std::make_unique<BlobCache>(100);
+            if (!commit_cache)
+                commit_cache = std::make_unique<CommitCache>(50);
+            if (!history_cache)
+                history_cache = std::make_unique<HistoryCache>();
             return true;
         }
 
@@ -94,6 +106,14 @@ namespace gitz
             commitStore = new CommitStore(repoPath + "/.gitz/objects");
             index = new Index(repoPath + "/.gitz/index");
             branchManager = new BranchManager(this);
+
+            // Initialize caches if not already initialized
+            if (!blob_cache)
+                blob_cache = std::make_unique<BlobCache>(100);
+            if (!commit_cache)
+                commit_cache = std::make_unique<CommitCache>(50);
+            if (!history_cache)
+                history_cache = std::make_unique<HistoryCache>();
 
             // Read HEAD_COMMIT if it exists
             fs::path headCommitPath = gitzDir / "HEAD_COMMIT";
@@ -341,5 +361,31 @@ namespace gitz
         }
 
         return true;
-    }
 }
+
+bool Repository::readBlobCached(const std::string& hash, std::string& out_content) {
+    // 1. Try cache first
+    if (blob_cache && blob_cache->get(hash, out_content)) {
+        return true;
+    }
+
+    // 2. Safety check
+    if (!blobStore) {
+        std::cerr << "Error: BlobStore not initialized" << std::endl;
+        return false;
+    }
+
+    // 3. Read from disk
+    if (!blobStore->readBlob(hash, out_content)) {
+        return false;
+    }
+
+    // 4. Store in cache
+    if (blob_cache) {
+        blob_cache->put(hash, out_content);
+    }
+
+    return true;
+}
+
+} // namespace gitz

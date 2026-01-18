@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 #include "Branch.h"
+#include "Cache.h"
+#include "HistoryCache.h"
+#include "Optimizer.h"
+#include <memory>
 
 namespace gitz
 {
@@ -23,6 +27,9 @@ namespace gitz
         Index* index;
         BranchManager* branchManager;
         std::string headCommitHash;
+        std::unique_ptr<BlobCache> blob_cache;
+        std::unique_ptr<CommitCache> commit_cache;
+        std::unique_ptr<HistoryCache> history_cache;
 
     public:
         explicit Repository(const std::string& path);
@@ -46,5 +53,13 @@ namespace gitz
         // Additional getters and operations
         CommitStore* getCommitStore();
         bool checkoutCommit(const std::string& commitHash);
+        
+        // Cache getters
+        BlobCache* getBlobCache();
+        CommitCache* getCommitCache();
+        HistoryCache* getHistoryCache();
+        
+        // Cached blob reading
+        bool readBlobCached(const std::string& hash, std::string& out_content);
     };
 }
