@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(Git-Z)
+project("Git-Z" VERSION 1.0.0)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -12,7 +12,7 @@ if(MSVC)
     add_compile_options(/W4)
 else()
     # GCC and Clang
-    add_compile_options(-Wall -Wextra)
+    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # Set runtime output directory for executables
@@ -20,7 +20,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 # Create executable target
 add_executable(gitz
-    src/main.cpp
     src/Hash.cpp
     src/Blob.cpp
     src/Tree.cpp
@@ -34,6 +33,8 @@ add_executable(gitz
     src/Optimizer.cpp
     src/CLI.cpp
     src/Repository.cpp
+    src/version.cpp
+    src/main.cpp
 )
 
 # Add include directory

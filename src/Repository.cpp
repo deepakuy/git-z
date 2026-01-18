@@ -71,6 +71,14 @@ namespace gitz
             }
             headCommitFile.close();
 
+            // Create empty index file
+            std::ofstream indexFile(gitzDir / "index");
+            if (!indexFile.is_open()) {
+                std::cerr << "Error: Failed to create index file" << std::endl;
+                return false;
+            }
+            indexFile.close();
+
             return true;
         } catch (const fs::filesystem_error& e) {
             std::cerr << "Error: " << e.what() << std::endl;
