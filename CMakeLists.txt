@@ -24,6 +24,7 @@ add_executable(gitz
     src/Repository.cpp
     src/Hash.cpp
     src/Blob.cpp
+    src/Tree.cpp
 )
 
 # Add include directory
