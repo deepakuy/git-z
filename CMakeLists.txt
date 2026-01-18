@@ -21,6 +21,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 # Create executable target
 add_executable(gitz
     src/main.cpp
+    src/Commands.cpp
+    src/Validator.cpp
     src/Repository.cpp
     src/Hash.cpp
     src/Blob.cpp

@@ -276,4 +276,70 @@ namespace gitz
         }
         return branchManager->listBranches();
     }
+
+    bool Repository::log()
+    {
+        if (headCommitHash.empty()) {
+            std::cout << "No commits yet" << std::endl;
+            return true;
+        }
+
+        std::string currentHash = headCommitHash;
+        while (!currentHash.empty()) {
+            Commit commit;
+            if (!commitStore || !commitStore->readCommit(currentHash, commit)) {
+                std::cerr << "Error: Failed to read commit " << currentHash << std::endl;
+                return false;
+            }
+
+            // Print commit details
+            std::cout << "commit " << currentHash << std::endl;
+            std::cout << "Author: " << commit.author << std::endl;
+            std::time_t t = static_cast<std::time_t>(commit.timestamp);
+            std::cout << "Date:   " << std::ctime(&t);
+            std::cout << "\n    " << commit.message << "\n" << std::endl;
+
+            // Move to parent commit
+            currentHash = commit.parentHash;
+        }
+
+        return true;
+    }
+
+    CommitStore* Repository::getCommitStore() {
+        return commitStore;
+    }
+
+    bool Repository::checkoutCommit(const std::string& commitHash) {
+        if (!commitStore) {
+            std::cerr << "Error: CommitStore not initialized" << std::endl;
+            return false;
+        }
+
+        if (!commitStore->commitExists(commitHash)) {
+            std::cerr << "Error: Commit does not exist" << std::endl;
+            return false;
+        }
+
+        // Write commit hash to .gitz/HEAD (detached HEAD state)
+        std::filesystem::path headFile = std::filesystem::path(repoPath) / ".gitz" / "HEAD";
+        std::ofstream headOut(headFile);
+        if (!headOut) {
+            std::cerr << "Error: Failed to write HEAD file" << std::endl;
+            return false;
+        }
+        headOut << "detached:" << commitHash << "\n";
+
+        headOut.close();
+
+        // Update internal state
+        setHeadCommit(commitHash);
+
+        // Clear staging area
+        if (index) {
+            index->clear();
+        }
+
+        return true;
+    }
 }

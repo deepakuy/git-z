@@ -41,5 +41,10 @@ namespace gitz
         bool createBranch(const std::string& name);
         bool switchBranch(const std::string& name);
         std::vector<std::string> listBranches();
+        bool log();
+        
+        // Additional getters and operations
+        CommitStore* getCommitStore();
+        bool checkoutCommit(const std::string& commitHash);
     };
 }
