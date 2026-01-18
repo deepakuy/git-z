@@ -206,4 +206,19 @@ bool Commands::checkout(Repository* repo, const std::string& target) {
     return true;
 }
 
+void Commands::log(Repository* repo)
+{
+    if (!repo) {
+        std::cerr << "Error: Repository is null" << std::endl;
+        return;
+    }
+
+    if (!repo->open()) {
+        std::cerr << "Error: Repository not initialized" << std::endl;
+        return;
+    }
+
+    repo->log();
+}
+
 } // namespace gitz
