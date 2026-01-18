@@ -18,6 +18,7 @@ namespace gitz
         TreeStore* treeStore;
         CommitStore* commitStore;
         Index* index;
+        std::string headCommitHash;
 
     public:
         explicit Repository(const std::string& path);
@@ -27,5 +28,8 @@ namespace gitz
         std::string getRepoPath() const;
         Index* getIndex();
         bool stageFile(const std::string& filepath);
+        std::string getHeadCommit();
+        void setHeadCommit(const std::string& hash);
+        bool commit(const std::string& message);
     };
 }

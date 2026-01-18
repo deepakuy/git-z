@@ -15,3 +15,12 @@ Makefile
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Git-Z internal repository (DO NOT COMMIT)
+.gitz/
+
+# Windows binaries
+*.exe
+*.obj
+*.pdb
+

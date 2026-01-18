@@ -54,9 +54,29 @@ int main(int argc, char* argv[])
         }
     }
 
-    // Handle other placeholder commands
-    if (command == "commit" ||
-        command == "log" ||
+    // Handle commit command
+    if (command == "commit") {
+        if (argc < 3) {
+            std::cerr << "Usage: gitz commit \"message\"" << std::endl;
+            return 1;
+        }
+
+        if (!repo.open()) {
+            std::cerr << "Error: Repository not initialized" << std::endl;
+            return 1;
+        }
+
+        std::string message = argv[2];
+
+        if (repo.commit(message)) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+
+    // Placeholder commands
+    if (command == "log" ||
         command == "status" ||
         command == "branch" ||
         command == "checkout") {

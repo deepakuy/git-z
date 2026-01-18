@@ -6,13 +6,14 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 namespace gitz
 {
     Repository::Repository(const std::string& path)
-        : repoPath(path), blobStore(nullptr), treeStore(nullptr), commitStore(nullptr), index(nullptr)
+        : repoPath(path), blobStore(nullptr), treeStore(nullptr), commitStore(nullptr), index(nullptr), headCommitHash("")
     {
     }
 
@@ -51,6 +52,14 @@ namespace gitz
             headFile << "refs/heads/master\n";
             headFile.close();
 
+            // Create HEAD_COMMIT file
+            std::ofstream headCommitFile(gitzDir / "HEAD_COMMIT");
+            if (!headCommitFile.is_open()) {
+                std::cerr << "Error: Failed to create HEAD_COMMIT file" << std::endl;
+                return false;
+            }
+            headCommitFile.close();
+
             return true;
         } catch (const fs::filesystem_error& e) {
             std::cerr << "Error: " << e.what() << std::endl;
@@ -60,6 +69,11 @@ namespace gitz
 
     bool Repository::open()
     {
+        // If already opened, return success
+        if (blobStore || treeStore || commitStore || index) {
+            return true;
+        }
+
         fs::path gitzDir = fs::path(repoPath) / ".gitz";
 
         // Check if .gitz directory exists
@@ -74,6 +88,16 @@ namespace gitz
             treeStore = new TreeStore(repoPath + "/.gitz/objects");
             commitStore = new CommitStore(repoPath + "/.gitz/objects");
             index = new Index(repoPath + "/.gitz/index");
+
+            // Read HEAD_COMMIT if it exists
+            fs::path headCommitPath = gitzDir / "HEAD_COMMIT";
+            if (fs::exists(headCommitPath)) {
+                std::ifstream headCommitFile(headCommitPath);
+                if (headCommitFile.is_open()) {
+                    std::getline(headCommitFile, headCommitHash);
+                    headCommitFile.close();
+                }
+            }
 
             return true;
         } catch (const fs::filesystem_error& e) {
@@ -135,6 +159,81 @@ namespace gitz
             return false;
         }
         index->add(filepath, blobHash);
+        return true;
+    }
+
+    std::string Repository::getHeadCommit()
+    {
+        return headCommitHash;
+    }
+
+    void Repository::setHeadCommit(const std::string& hash)
+    {
+        headCommitHash = hash;
+
+        // Write to HEAD_COMMIT file
+        fs::path gitzDir = fs::path(repoPath) / ".gitz";
+        fs::path headCommitPath = gitzDir / "HEAD_COMMIT";
+
+        try {
+            std::ofstream headCommitFile(headCommitPath);
+            if (headCommitFile.is_open()) {
+                headCommitFile << hash;
+                headCommitFile.close();
+            }
+        } catch (const fs::filesystem_error& e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+    }
+
+    bool Repository::commit(const std::string& message)
+    {
+        if (!index || index->empty()) {
+            std::cerr << "Error: No files staged for commit." << std::endl;
+            return false;
+        }
+
+        if (!treeStore || !commitStore) {
+            std::cerr << "Error: Repository not properly initialized." << std::endl;
+            return false;
+        }
+
+        std::vector<TreeEntry> treeEntries;
+
+        for (const auto& entry : index->entries()) {
+            TreeEntry te;
+            te.name = entry.path;
+            te.hash = entry.blobHash;
+            te.isDirectory = false;
+            treeEntries.push_back(te);
+        }
+
+        std::string treeHash = treeStore->createTree(treeEntries);
+        if (treeHash.empty()) {
+            std::cerr << "Error: Failed to create tree object." << std::endl;
+            return false;
+        }
+
+        std::string parentHash = getHeadCommit();
+
+        // Validate parent commit exists if there is one
+        if (!parentHash.empty() && !commitStore->commitExists(parentHash)) {
+            std::cerr << "Error: HEAD points to invalid commit." << std::endl;
+            return false;
+        }
+
+        std::string commitHash =
+            commitStore->createCommit(treeHash, parentHash, message);
+
+        if (commitHash.empty()) {
+            std::cerr << "Error: Failed to create commit." << std::endl;
+            return false;
+        }
+
+        setHeadCommit(commitHash);
+        index->clear();
+
+        std::cout << "Committed as " << commitHash << std::endl;
         return true;
     }
 }
