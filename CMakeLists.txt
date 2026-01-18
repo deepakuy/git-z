@@ -27,6 +27,7 @@ add_executable(gitz
     src/Tree.cpp
     src/Commit.cpp
     src/Index.cpp
+    src/Branch.cpp
 )
 
 # Add include directory

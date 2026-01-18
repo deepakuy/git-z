@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include "Branch.h"
 
 namespace gitz
 {
@@ -9,6 +11,7 @@ namespace gitz
     class TreeStore;
     class CommitStore;
     class Index;
+    class BranchManager;
 
     class Repository
     {
@@ -18,6 +21,7 @@ namespace gitz
         TreeStore* treeStore;
         CommitStore* commitStore;
         Index* index;
+        BranchManager* branchManager;
         std::string headCommitHash;
 
     public:
@@ -31,5 +35,11 @@ namespace gitz
         std::string getHeadCommit();
         void setHeadCommit(const std::string& hash);
         bool commit(const std::string& message);
+        
+        // Branch management
+        BranchManager* getBranchManager();
+        bool createBranch(const std::string& name);
+        bool switchBranch(const std::string& name);
+        std::vector<std::string> listBranches();
     };
 }

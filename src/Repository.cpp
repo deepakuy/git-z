@@ -3,6 +3,7 @@
 #include "Tree.h"
 #include "Commit.h"
 #include "Index.h"
+#include "Branch.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -13,7 +14,8 @@ namespace fs = std::filesystem;
 namespace gitz
 {
     Repository::Repository(const std::string& path)
-        : repoPath(path), blobStore(nullptr), treeStore(nullptr), commitStore(nullptr), index(nullptr), headCommitHash("")
+        : repoPath(path), blobStore(nullptr), treeStore(nullptr), commitStore(nullptr), 
+          index(nullptr), branchManager(nullptr), headCommitHash("")
     {
     }
 
@@ -42,6 +44,9 @@ namespace gitz
 
             // Create Index
             index = new Index(repoPath + "/.gitz/index");
+
+            // Create BranchManager
+            branchManager = new BranchManager(this);
 
             // Create HEAD file
             std::ofstream headFile(gitzDir / "HEAD");
@@ -88,6 +93,7 @@ namespace gitz
             treeStore = new TreeStore(repoPath + "/.gitz/objects");
             commitStore = new CommitStore(repoPath + "/.gitz/objects");
             index = new Index(repoPath + "/.gitz/index");
+            branchManager = new BranchManager(this);
 
             // Read HEAD_COMMIT if it exists
             fs::path headCommitPath = gitzDir / "HEAD_COMMIT";
@@ -119,6 +125,9 @@ namespace gitz
         }
         if (index != nullptr) {
             delete index;
+        }
+        if (branchManager != nullptr) {
+            delete branchManager;
         }
     }
 
@@ -235,5 +244,36 @@ namespace gitz
 
         std::cout << "Committed as " << commitHash << std::endl;
         return true;
+    }
+
+    BranchManager* Repository::getBranchManager() 
+    {
+        return branchManager;
+    }
+
+    bool Repository::createBranch(const std::string& name) 
+    {
+        if (!branchManager) {
+            std::cerr << "Error: BranchManager not initialized" << std::endl;
+            return false;
+        }
+        return branchManager->createBranch(name);
+    }
+
+    bool Repository::switchBranch(const std::string& name) 
+    {
+        if (!branchManager) {
+            std::cerr << "Error: BranchManager not initialized" << std::endl;
+            return false;
+        }
+        return branchManager->switchBranch(name);
+    }
+
+    std::vector<std::string> Repository::listBranches() 
+    {
+        if (!branchManager) {
+            return {};
+        }
+        return branchManager->listBranches();
     }
 }
