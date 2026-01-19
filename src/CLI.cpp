@@ -92,12 +92,33 @@ bool CLI::execute() {
     }
     
     if (command == "commit") {
-        // Expect format: -m <message>
-        if (arguments.size() < 2 || arguments[0] != "-m") {
-            std::cerr << "Error: commit requires -m <message>" << std::endl;
+        std::string message;
+        
+        // Handle both formats: "-m message" and direct message
+        if (arguments.empty()) {
+            std::cerr << "Error: commit message cannot be empty" << std::endl;
             return false;
         }
-        return Commands::commit(&repo, arguments[1]);
+        
+        if (arguments[0] == "-m") {
+            // Format: gitz commit -m "message"
+            if (arguments.size() < 2) {
+                std::cerr << "Error: commit message cannot be empty" << std::endl;
+                return false;
+            }
+            message = arguments[1];
+        } else {
+            // Format: gitz commit "message"
+            message = arguments[0];
+        }
+        
+        // Reject empty messages
+        if (message.empty()) {
+            std::cerr << "Error: commit message cannot be empty" << std::endl;
+            return false;
+        }
+        
+        return Commands::commit(&repo, message);
     }
     
     if (command == "log") {
